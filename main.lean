@@ -1,8 +1,7 @@
 import Mathlib.Data.Dfinsupp.Basic
 import Mathlib.Data.Finset.sort
 import Mathlib.Data.Dfinsupp.Interval
---import Mathlib.Data.Dfinsupp.Order
---import Mathlib.Data.Dfinsupp.WellFounded
+
 
 
 section DMvPolynomial_Basics
@@ -15,16 +14,7 @@ def DMvPolynomial (σ : Type) (R : Type) [CommSemiring R] [DecidableEq σ] :=
   Π₀ (t : (Π₀ (x : σ), ℕ)), R
 instance Addcommmonoid : AddCommMonoid (DMvPolynomial σ R) :=
   Dfinsupp.instAddCommMonoidDfinsuppToZeroToAddMonoid
-def onemono (σ : Type _):=
-  { toFun := fun (x : σ) ↦ 0,
-    support' := Trunc.mk {
-      val := Multiset.zero
-      property := by
-        intro x1
-        apply Or.intro_right
-        exact rfl
-    }
-    : Dfinsupp _ }
+
 
 def Monomial (t : Π₀ x : σ, ℕ)(c : R) : DMvPolynomial σ R:=
   Dfinsupp.single t c
