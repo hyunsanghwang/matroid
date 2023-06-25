@@ -77,8 +77,7 @@ instance ZeroMul (p : DMvPolynomial σ R) : Mul 0 p = 0:=by
 
 instance MulZero (p : DMvPolynomial σ R) : Mul p 0 = 0:=by
   rw [MulComm, ZeroMul]
-def natcast (n : ℕ): DMvPolynomial σ R :=
-  Monomial 0 n
+
 
 -- A polynomial is a sum of its distinct monomials.
 theorem Polynomial_sum_monomial (p : DMvPolynomial σ R) : 
@@ -123,7 +122,7 @@ theorem MulAssoc (p q r : DMvPolynomial σ R) : Mul (Mul p q) r = Mul p (Mul q r
   Dfinsupp.sum q (fun (t2 : Π₀ x : σ, ℕ)(c2 : R) ↦ 
   Dfinsupp.sum r (fun (t3 : Π₀ x : σ, ℕ)(c3 : R) ↦ 
   Monomial (t1+t2+t3) (c1*c2*c3))))
-  simp only [<-monomialmul, Polynomial_linear_left]
+  simp only [←monomialmul, Polynomial_linear_left]
   rw [Mul]
   apply congr_arg
   apply funext
@@ -150,13 +149,13 @@ theorem MulAssoc (p q r : DMvPolynomial σ R) : Mul (Mul p q) r = Mul p (Mul q r
   rw [Monomial, mul_zero, Dfinsupp.single_zero]
   simp only [Monomial, zero_mul, Dfinsupp.single_zero, Dfinsupp.sum_zero,
   forall_const]
-  simp only [<-Dfinsupp.sum_add, Monomial, right_distrib, Dfinsupp.single_add,
+  simp only [←Dfinsupp.sum_add, Monomial, right_distrib, Dfinsupp.single_add,
   forall_const]
   simp only [Monomial, mul_zero, Dfinsupp.single_zero, forall_const]
   simp only [Monomial, left_distrib, Dfinsupp.single_add, forall_const]
   simp only [Monomial, mul_zero, Dfinsupp.single_zero, forall_const]
   simp only [Monomial, left_distrib, Dfinsupp.single_add, forall_const]
-  simp [<-Dfinsupp.sum_apply]
+  simp [←Dfinsupp.sum_apply]
   have temp2 (p q r : DMvPolynomial σ R) :
   Mul (Mul p q) r =
   Dfinsupp.sum p (fun (t1 : Π₀ x : σ, ℕ)(c1 : R) ↦ 
@@ -183,6 +182,7 @@ theorem MulAssoc (p q r : DMvPolynomial σ R) : Mul (Mul p q) r = Mul p (Mul q r
   intro r22
   rw [add_comm _ t33, add_assoc, mul_comm _ r33, mul_assoc]
   rw [temp1, temp2]
+
 theorem OneMul (p : DMvPolynomial σ R) : Mul (Monomial 0 1) p = p:=by
   rw [Mul, Monomial, Dfinsupp.sum_single_index]
   simp only [zero_add, one_mul, Monomial]
