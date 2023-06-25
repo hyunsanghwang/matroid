@@ -327,3 +327,46 @@ def SPolynomial (r : (Π₀ x : σ, ℕ) → (Π₀ x : σ, ℕ) → Prop)
   (LeadingTerm r f) (LcmDivisibleLeft (LeadingTerm r f) (LeadingTerm r g))) (LeadingCoeff r g) * f
   - Monomial (TermDiv (Lcm (LeadingTerm r f) (LeadingTerm r g))
   (LeadingTerm r g) (LcmDivisibleRight (LeadingTerm r f) (LeadingTerm r g))) (LeadingCoeff r f) * g
+
+section Visibility
+
+def Term (var : List ℕ) : (Π₀ (x : ℕ), ℕ) := 
+  { toFun := fun x : ℕ ↦ List.getD var x 0,
+      support' := Trunc.mk {
+        val := Multiset.range (List.length var)
+        property := by
+          intro i
+          by_cases h : List.length var ≤ i
+          apply Or.intro_right
+          apply List.getD_eq_default
+          exact h
+          apply Or.intro_left
+          rw [not_le] at h
+          rw [Multiset.mem_range]
+          exact h
+          }
+      : Π₀ (x : ℕ), ℕ }
+
+def Monomial' (coeff : ℚ) (var : List ℕ) : dMvPolynomial ℕ ℚ:= 
+  Monomial (Term var) coeff
+
+lemma tool (t : (Π₀ x : ℕ, ℕ))[nonzero : NeZero t] : Finset.Nonempty t.support:= by
+  by_contra h
+  rw [Finset.not_nonempty_iff_eq_empty, Dfinsupp.support_eq_empty, 
+  ←not_neZero] at h
+  rw [<-not_iff_false_intro nonzero]
+  exact h
+
+def Viewer (t : (Π₀ x : ℕ, ℕ))[NeZero t] : List ℕ := 
+  List.map t (List.range ((Finset.max' t.support (tool t))+1))
+
+def ViewerForMonomial (t : (Π₀ x : ℕ, ℕ))(c : ℚ)[NeZero t] : String :=
+  toString c ++ " " ++ List.toString (Viewer t)
+
+instance tool3 (t0 : List ℕ): NeZero (Term t0):= by sorry
+-- this instance is not true. must be fixed.
+
+--warning : Viewer (Term []) or Viewer (Term [0]), Viewer (Term [0,0]), etc will crash
+#eval Viewer (Term [1,0,3]) 
+#eval List.toString (Viewer (Term [1,0,3]))
+#eval viewerformonomial (Term [1,0,3]) (3.1)
