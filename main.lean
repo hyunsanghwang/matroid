@@ -347,7 +347,7 @@ def Term (var : List ℕ) : (Π₀ (x : ℕ), ℕ) :=
           }
       : Π₀ (x : ℕ), ℕ }
 
-def Monomial' (coeff : ℚ) (var : List ℕ) : dMvPolynomial ℕ ℚ:= 
+def Monomial' (coeff : ℚ) (var : List ℕ) : DMvPolynomial ℕ ℚ:= 
   Monomial (Term var) coeff
 
 lemma tool (t : (Π₀ x : ℕ, ℕ))[nonzero : NeZero t] : Finset.Nonempty t.support:= by
@@ -369,4 +369,4 @@ instance tool3 (t0 : List ℕ): NeZero (Term t0):= by sorry
 --warning : Viewer (Term []) or Viewer (Term [0]), Viewer (Term [0,0]), etc will crash
 #eval Viewer (Term [1,0,3]) 
 #eval List.toString (Viewer (Term [1,0,3]))
-#eval viewerformonomial (Term [1,0,3]) (3.1)
+#eval ViewerForMonomial (Term [1,0,3]) (3.1)
