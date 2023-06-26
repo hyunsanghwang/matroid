@@ -12,6 +12,10 @@ namespace DMvPolynomial
 
 def DMvPolynomial (σ : Type) (R : Type) [CommSemiring R] [DecidableEq σ] :=
   Π₀ (t : (Π₀ (x : σ), ℕ)), R
+
+protected instance DecidableEq : DecidableEq (DMvPolynomial σ R) :=
+  Dfinsupp.instDecidableEqDfinsupp
+
 instance Addcommmonoid : AddCommMonoid (DMvPolynomial σ R) :=
   Dfinsupp.instAddCommMonoidDfinsuppToZeroToAddMonoid
 
