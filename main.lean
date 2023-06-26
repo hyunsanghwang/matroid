@@ -350,23 +350,19 @@ def Term (var : List ℕ) : (Π₀ (x : ℕ), ℕ) :=
 def Monomial' (coeff : ℚ) (var : List ℕ) : DMvPolynomial ℕ ℚ:= 
   Monomial (Term var) coeff
 
-lemma tool (t : (Π₀ x : ℕ, ℕ))[nonzero : NeZero t] : Finset.Nonempty t.support:= by
+lemma tool (t : (Π₀ x : ℕ, ℕ))(nonzero : ¬t = 0) : Finset.Nonempty t.support:= by
   by_contra h
-  rw [Finset.not_nonempty_iff_eq_empty, Dfinsupp.support_eq_empty, 
-  ←not_neZero] at h
-  rw [<-not_iff_false_intro nonzero]
-  exact h
+  rw [Finset.not_nonempty_iff_eq_empty, Dfinsupp.support_eq_empty] at h
+  rw [<-not_iff_false_intro h]
+  exact nonzero
 
-def Viewer (t : (Π₀ x : ℕ, ℕ))[NeZero t] : List ℕ := 
-  List.map t (List.range ((Finset.max' t.support (tool t))+1))
+def Viewer (t : (Π₀ x : ℕ, ℕ)) : List ℕ := 
+  if h : (t=0) then [] 
+  else List.map t (List.range ((Finset.max' t.support (tool t h))+1))
 
-def ViewerForMonomial (t : (Π₀ x : ℕ, ℕ))(c : ℚ)[NeZero t] : String :=
+def ViewerForMonomial (t : (Π₀ x : ℕ, ℕ))(c : ℚ) : String :=
   toString c ++ " " ++ List.toString (Viewer t)
 
-instance tool3 (t0 : List ℕ): NeZero (Term t0):= by sorry
--- this instance is not true. must be fixed.
-
---warning : Viewer (Term []) or Viewer (Term [0]), Viewer (Term [0,0]), etc will crash
 #eval Viewer (Term [1,0,3]) 
 #eval List.toString (Viewer (Term [1,0,3]))
 #eval ViewerForMonomial (Term [1,0,3]) (3.1)
