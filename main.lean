@@ -258,6 +258,31 @@ inductive grevlex (fin1 fin2 : Π₀ x : ℕ, ℕ) : Prop where
   | degree : fin1.support.card < fin2.support.card → grevlex fin1 fin2
   | lex    : fin1.support.card = fin2.support.card → colex ( · < · ) ( · < · ) fin2 fin1 → grevlex fin1 fin2
 
+lemma tool1 (a b : Π₀ x : ℕ, ℕ) (sub1 : a-b=0) : a=b ∨ (∃ i, (∀ (j : ℕ), Nat.lt j i → a j = b j) ∧ a i < b i):=by
+  sorry
+
+lemma tool2 (a b : Π₀ x : ℕ, ℕ) (sub2 : b-a=0) : ¬(a=b ∨ (∃ i, (∀ (j : ℕ), Nat.lt j i → a j = b j) ∧ a i < b i)):=by
+  sorry
+
+lemma tool3 (a b : Π₀ x : ℕ, ℕ) (sub1 : ¬a-b=0)(sub2 : ¬b-a=0)
+(sub3 : List.map (b-a) (List.range ((Finset.max' (b-a).support (NonzeroNonemptysupport (b-a) sub2))+1)) >
+List.map (a-b) (List.range ((Finset.max' (a-b).support (NonzeroNonemptysupport (a-b) sub1))+1)))
+ : a=b ∨ (∃ i, (∀ (j : ℕ), Nat.lt j i → a j = b j) ∧ a i < b i):=by
+  sorry
+
+lemma tool4 (a b : Π₀ x : ℕ, ℕ) (sub1 : ¬a-b=0)(sub2 : ¬b-a=0)
+(sub3 : ¬(List.map (b-a) (List.range ((Finset.max' (b-a).support (NonzeroNonemptysupport (b-a) sub2))+1)) >
+List.map (a-b) (List.range ((Finset.max' (a-b).support (NonzeroNonemptysupport (a-b) sub1))+1))))
+ : ¬(a=b ∨ (∃ i, (∀ (j : ℕ), Nat.lt j i → a j = b j) ∧ a i < b i)):=by
+  sorry
+
+instance lex'.decidable (a b : Π₀ x : ℕ, ℕ) : Decidable (a=b ∨ (∃ i, (∀ (j : ℕ), Nat.lt j i → a j = b j) ∧ a i < b i)):=
+  if sub1 : a-b=0 then isTrue (tool1 a b sub1) else
+    if sub2 : b-a=0 then isFalse (tool2 a b sub2) else
+      if sub3 : List.map (b-a) (List.range ((Finset.max' (b-a).support (NonzeroNonemptysupport (b-a) sub2))+1)) >
+      List.map (a-b) (List.range ((Finset.max' (a-b).support (NonzeroNonemptysupport (a-b) sub1))+1)) then 
+      isTrue (tool3 a b sub1 sub2 sub3) else isFalse (tool4 a b sub1 sub2 sub3)
+
 instance lex'.trans : IsTrans (Π₀ x : ℕ, ℕ) (lex' Nat.lt ( · < · )) where
   trans:=by
     intro a b c h1 h2
@@ -463,7 +488,7 @@ def Term (var : List ℕ) : (Π₀ (x : ℕ), ℕ) :=
 def Monomial' (coeff : ℚ) (var : List ℕ) : DMvPolynomial ℕ ℚ:= 
   Monomial (Term var) coeff
 
-lemma tool (t : (Π₀ x : ℕ, ℕ))(nonzero : ¬t = 0) : Finset.Nonempty t.support:= by
+lemma NonzeroNonemptysupport (t : (Π₀ x : ℕ, ℕ))(nonzero : ¬t = 0) : Finset.Nonempty t.support:= by
   by_contra h
   rw [Finset.not_nonempty_iff_eq_empty, Dfinsupp.support_eq_empty] at h
   rw [<-not_iff_false_intro h]
@@ -471,11 +496,13 @@ lemma tool (t : (Π₀ x : ℕ, ℕ))(nonzero : ¬t = 0) : Finset.Nonempty t.sup
 
 def Viewer (t : (Π₀ x : ℕ, ℕ)) : List ℕ := 
   if h : (t=0) then [] 
-  else List.map t (List.range ((Finset.max' t.support (tool t h))+1))
+  else List.map t (List.range ((Finset.max' t.support (NonzeroNonemptysupport t h))+1))
 
-def ViewerForMonomial (t : (Π₀ x : ℕ, ℕ))(c : ℚ) : String :=
-  toString c ++ " " ++ List.toString (Viewer t)
+def polynomialviewer (p : DMvPolynomial ℕ ℚ) : List String := 
+  List.map (fun (i : List ℕ) ↦ 
+  ite (Term i ∈ p.support) (toString (p.toFun (Term i)) ++ " " ++ List.toString i) "") 
+  (List.map Viewer (p.support.sort (lex' Nat.lt (· < ·))))
 
 #eval Viewer (Term [1,0,3]) 
 #eval List.toString (Viewer (Term [1,0,3]))
-#eval ViewerForMonomial (Term [1,0,3]) (3.1)
+#eval polynomialviewer (Monomial' (-2.5) ([1,0,3,1]) + Monomial' (2.5) ([1,3,3,1]) + Monomial' (2.5) ([]))
