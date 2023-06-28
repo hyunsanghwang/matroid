@@ -264,6 +264,12 @@ lemma tool1 (a b : Π₀ x : ℕ, ℕ) (sub1 : a-b=0) : a=b ∨ (∃ i, (∀ (j 
 lemma tool2 (a b : Π₀ x : ℕ, ℕ) (sub2 : b-a=0) : ¬(a=b ∨ (∃ i, (∀ (j : ℕ), Nat.lt j i → a j = b j) ∧ a i < b i)):=by
   sorry
 
+lemma NonzeroNonemptysupport (t : (Π₀ x : ℕ, ℕ))(nonzero : ¬t = 0) : Finset.Nonempty t.support:= by
+  by_contra h
+  rw [Finset.not_nonempty_iff_eq_empty, Dfinsupp.support_eq_empty] at h
+  rw [<-not_iff_false_intro h]
+  exact nonzero
+
 lemma tool3 (a b : Π₀ x : ℕ, ℕ) (sub1 : ¬a-b=0)(sub2 : ¬b-a=0)
 (sub3 : List.map (b-a) (List.range ((Finset.max' (b-a).support (NonzeroNonemptysupport (b-a) sub2))+1)) >
 List.map (a-b) (List.range ((Finset.max' (a-b).support (NonzeroNonemptysupport (a-b) sub1))+1)))
@@ -283,7 +289,9 @@ instance lex'.decidable (a b : Π₀ x : ℕ, ℕ) : Decidable (a=b ∨ (∃ i, 
       List.map (a-b) (List.range ((Finset.max' (a-b).support (NonzeroNonemptysupport (a-b) sub1))+1)) then 
       isTrue (tool3 a b sub1 sub2 sub3) else isFalse (tool4 a b sub1 sub2 sub3)
 
-instance lex'.trans : IsTrans (Π₀ x : ℕ, ℕ) (lex' Nat.lt ( · < · )) where
+instance lex'.DecidableRel (lex' Nat.lt (· < ·)) := lex'.decidable
+
+instance lex'.Trans : IsTrans (Π₀ x : ℕ, ℕ) (lex' Nat.lt ( · < · )) where
   trans:=by
     intro a b c h1 h2
     by_cases first : a=b
@@ -331,7 +339,7 @@ instance lex'.trans : IsTrans (Π₀ x : ℕ, ℕ) (lex' Nat.lt ( · < · )) whe
     exact second
     exact first
 
-instance lex'.antisymm : IsAntisymm (Π₀ x : ℕ, ℕ) (lex' Nat.lt (· < ·)) where
+instance lex'.Antisymm : IsAntisymm (Π₀ x : ℕ, ℕ) (lex' Nat.lt (· < ·)) where
   antisymm:= by
     intro a b h1 h2
     by_cases first : a=b
@@ -371,7 +379,7 @@ instance lex'.antisymm : IsAntisymm (Π₀ x : ℕ, ℕ) (lex' Nat.lt (· < ·))
     exact first
     exact first
 
-instance lex'.total : IsTotal (Π₀ x : ℕ, ℕ) (lex' Nat.lt (· < ·)) where
+instance lex'.Total : IsTotal (Π₀ x : ℕ, ℕ) (lex' Nat.lt (· < ·)) where
   total := by
     intro a b
     rw [lex', lex']
@@ -487,12 +495,6 @@ def Term (var : List ℕ) : (Π₀ (x : ℕ), ℕ) :=
 
 def Monomial' (coeff : ℚ) (var : List ℕ) : DMvPolynomial ℕ ℚ:= 
   Monomial (Term var) coeff
-
-lemma NonzeroNonemptysupport (t : (Π₀ x : ℕ, ℕ))(nonzero : ¬t = 0) : Finset.Nonempty t.support:= by
-  by_contra h
-  rw [Finset.not_nonempty_iff_eq_empty, Dfinsupp.support_eq_empty] at h
-  rw [<-not_iff_false_intro h]
-  exact nonzero
 
 def Viewer (t : (Π₀ x : ℕ, ℕ)) : List ℕ := 
   if h : (t=0) then [] 
