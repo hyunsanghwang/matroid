@@ -252,7 +252,7 @@ def colex (r : σ → σ → Prop) (s : ℕ → ℕ → Prop) (x y : Π₀ x : �
 
 inductive grlex (fin1 fin2 : Π₀ x : ℕ, ℕ) : Prop where
   | degree : fin1.support.card < fin2.support.card → grlex fin1 fin2
-  | lex    : fin1.support.card = fin2.support.card → lex ( · < · ) ( · < · ) fin1 fin2 → grlex fin1 fin2
+  | lex    : fin1.support.card = fin2.support.card → lex' Nat.lt ( · < · ) fin1 fin2 → grlex fin1 fin2
 
 inductive grevlex (fin1 fin2 : Π₀ x : ℕ, ℕ) : Prop where
   | degree : fin1.support.card < fin2.support.card → grevlex fin1 fin2
