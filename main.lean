@@ -289,7 +289,7 @@ instance lex'.decidable (a b : Π₀ x : ℕ, ℕ) : Decidable (a=b ∨ (∃ i, 
       List.map (a-b) (List.range ((Finset.max' (a-b).support (NonzeroNonemptysupport (a-b) sub1))+1)) then 
       isTrue (tool3 a b sub1 sub2 sub3) else isFalse (tool4 a b sub1 sub2 sub3)
 
-instance lex'.DecidableRel (lex' Nat.lt (· < ·)) := lex'.decidable
+instance lex'.DecidableRel : DecidableRel (lex' Nat.lt (· < ·)):= lex'.decidable
 
 instance lex'.Trans : IsTrans (Π₀ x : ℕ, ℕ) (lex' Nat.lt ( · < · )) where
   trans:=by
