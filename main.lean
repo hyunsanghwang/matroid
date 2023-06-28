@@ -244,8 +244,8 @@ instance commring [CommRing R] : CommRing (DMvPolynomial σ R) :=
   mul_comm := MulComm
 }
 
-def lex (r : σ → σ → Prop) (s : ℕ → ℕ → Prop) (x y : Π₀ x : σ, ℕ) : Prop :=
-  ∃ i, (∀ (j : σ), r j i → x j = y j) ∧ s (x i) (y i)
+def lex' (r : σ → σ → Prop) (s : ℕ → ℕ → Prop) (x y : Π₀ x : σ, ℕ) : Prop :=
+  x = y ∨ ∃ i, (∀ (j : σ), r j i → x j = y j) ∧ s (x i) (y i)
 
 def colex (r : σ → σ → Prop) (s : ℕ → ℕ → Prop) (x y : Π₀ x : σ, ℕ) : Prop :=
   ∃ i, (∀ (j : σ), r i j → x j = y j) ∧ s (x i) (y i)
@@ -257,6 +257,115 @@ inductive grlex (fin1 fin2 : Π₀ x : ℕ, ℕ) : Prop where
 inductive grevlex (fin1 fin2 : Π₀ x : ℕ, ℕ) : Prop where
   | degree : fin1.support.card < fin2.support.card → grevlex fin1 fin2
   | lex    : fin1.support.card = fin2.support.card → colex ( · < · ) ( · < · ) fin2 fin1 → grevlex fin1 fin2
+
+instance lex'.trans : IsTrans (Π₀ x : ℕ, ℕ) (lex' Nat.lt ( · < · )) where
+  trans:=by
+    intro a b c h1 h2
+    by_cases first : a=b
+    rw [first]
+    exact h2
+    by_cases second : b=c
+    rw [<-second]
+    exact h1
+    rw [lex', or_iff_right] at h1
+    rw [lex', or_iff_right] at h2
+    let ⟨i1, h11⟩ := h1
+    let ⟨i2, h22⟩ := h2
+    rw [lex']
+    apply Or.intro_right
+    by_cases h : i1<i2
+    use i1
+    apply And.intro
+    intro j
+    intro h3
+    rw [h11.left, h22.left]
+    apply lt_trans h3 h
+    exact h3
+    rw [←h22.left]
+    apply h11.right
+    exact h
+    rw [not_lt] at h
+    use i2
+    apply And.intro
+    intro j
+    intro h3
+    rw [h11.left, h22.left]
+    exact h3
+    apply lt_of_lt_of_le h3 h
+    by_cases h4 : i2=i1
+    rw [h4] at h22
+    rw [h4]
+    apply lt_trans h11.right h22.right
+    rw [←Ne.def] at h4
+    rw [h11.left]
+    exact h22.right
+    rw [Nat.lt_eq, lt_iff_le_and_ne]
+    apply And.intro
+    exact h
+    exact h4
+    exact second
+    exact first
+
+instance lex'.antisymm : IsAntisymm (Π₀ x : ℕ, ℕ) (lex' Nat.lt (· < ·)) where
+  antisymm:= by
+    intro a b h1 h2
+    by_cases first : a=b
+    exact first
+    rw [lex', or_iff_right] at h1
+    rw [lex', or_iff_right] at h2
+    let ⟨i1, h11⟩ := h1
+    let ⟨i2, h22⟩ := h2
+    rw [FunLike.ext_iff]
+    by_contra h
+    by_cases h001 : i1 < i2
+    have ht : a i1 = b i1
+    rw [h22.left]
+    rw [Nat.lt_eq]
+    exact h001
+    rw [←not_iff_false_intro h11.right]
+    apply Eq.not_lt ht
+    by_cases h002 : i1 = i2
+    rw [←and_not_self_iff (a i1 < b i1)]
+    apply And.intro
+    exact h11.right
+    rw [h002, not_lt]
+    apply le_of_lt h22.right
+    have ht : a i2 = b i2
+    rw [h11.left]
+    rw [Nat.lt_eq]
+    rw [not_lt] at h001
+    rw [←ne_eq] at h002
+    apply lt_of_le_of_ne h001
+    apply Ne.symm
+    exact h002
+    rw [←not_iff_false_intro h22.right, not_lt]
+    apply Eq.le ht
+    rw [<-ne_eq] at first
+    rw [<-ne_eq]
+    apply Ne.symm
+    exact first
+    exact first
+
+instance lex'.total : IsTotal (Π₀ x : ℕ, ℕ) (lex' Nat.lt (· < ·)) where
+  total := by
+    intro a b
+    rw [lex', lex']
+    by_cases h : a = b
+    apply Or.intro_left
+    apply Or.intro_left
+    exact h
+    rw [eq_comm]
+    rw [<-or_or_distrib_left]
+    apply Or.intro_right
+    rw [FunLike.ext_iff, not_forall] at h
+    by_contra h02
+    rw [not_or, not_exists, not_exists, <-forall_and] at h02
+    simp only [not_and, eq_comm, <-imp_and, not_lt, <-le_antisymm_iff,
+    Nat.lt_eq] at h02
+    rw [<-not_iff_false_intro h, not_exists_not]
+    simp at h02
+    intro n
+    apply Nat.strong_rec_on n h02
 
 lemma nonzero_polynomial_support_nonempty
  (r : (Π₀ x : σ, ℕ) → (Π₀ x : σ, ℕ) → Prop) 
