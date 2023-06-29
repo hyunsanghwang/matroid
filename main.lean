@@ -548,14 +548,20 @@ def eval (p : DMvPolynomial ℕ ℚ) (vals : List ℚ) : DMvPolynomial ℕ ℚ:=
     (evalcoeff (p.toFun (Pol.toList p)[i]!) (Pol.toList p)[i]! vals.length))
   main p.support.card
 
+def perm (p : DMvPolynomial ℕ ℚ) (perm : List ℕ) : DMvPolynomial ℕ ℚ:=
+  let rec permterm : (Π₀ x : ℕ, ℕ) → (Π₀ x : ℕ, ℕ) → Nat → Π₀ x : ℕ, ℕ
+    | _, a, 0 => a
+    | term, a, 1 => a.update perm[0]! (term.toFun perm[perm.length-1]!)
+    | term, a, i+1 => permterm term (a.update perm[i]! (a.toFun perm[i-1]!)) i
+  let rec main : Nat → DMvPolynomial ℕ ℚ
+    | 0   => 0
+    | i+1 => (main i) + (Monomial (permterm (Pol.toList p)[i]! (Pol.toList p)[i]! perm.length)
+     (p.toFun (Pol.toList p)[i]!))
+  main p.support.card
+
 def PolynomialViewer (p : DMvPolynomial ℕ ℚ) : List String := 
   List.map (fun i : List ℕ ↦ 
   ite (Term i ∈ p.support) (toString (p.toFun (Term i)) ++ " " ++ List.toString i) "") 
   (List.map Term.toList (p.support.sort (lex' Nat.lt (· < ·))))
-#eval List.map Term.toList (Pol.toList 1)
-#check Pol.toList 0
-#eval Term.toList (Term [1,0,3]) 
-#eval List.toString (Term.toList (Term [1,0,3]))
-#eval PolynomialViewer (Monomial' (-2.5) ([1,0,3,1]) + Monomial' (2.5) ([1,3,3,1]) + Monomial' (2.5) ([]))
-#eval PolynomialViewer (eval (Monomial' (-2.5) ([1,0,3,1]) + Monomial' (3.5) ([1,3,3,1]) + Monomial' (2.5) ([])) ([4]))
+
 #eval PolynomialViewer (eval (Monomial' (-2.5) ([1,0,3,1]) + Monomial' (3.5) ([1,3,3,1]) + Monomial' (2.5) ([])) ([4,2]))
