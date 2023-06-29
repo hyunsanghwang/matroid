@@ -11,7 +11,7 @@ variable {σ : Type}{R : Type}[CommSemiring R][DecidableEq σ][DecidableEq R]
 namespace DMvPolynomial
 
 def DMvPolynomial (σ : Type) (R : Type) [CommSemiring R] [DecidableEq σ] :=
-  Π₀ (t : (Π₀ (x : σ), ℕ)), R
+  Π₀ t : Π₀ x : σ, ℕ, R
 
 protected instance DecidableEq : DecidableEq (DMvPolynomial σ R) :=
   Dfinsupp.instDecidableEqDfinsupp
@@ -259,35 +259,67 @@ inductive grevlex (fin1 fin2 : Π₀ x : ℕ, ℕ) : Prop where
   | lex    : fin1.support.card = fin2.support.card → colex ( · < · ) ( · < · ) fin2 fin1 → grevlex fin1 fin2
 
 lemma tool1 (a b : Π₀ x : ℕ, ℕ) (sub1 : a-b=0) : a=b ∨ (∃ i, (∀ (j : ℕ), Nat.lt j i → a j = b j) ∧ a i < b i):=by
-  sorry
+  rw [FunLike.ext_iff] at sub1
+  simp only [ge_iff_le, Dfinsupp.coe_tsub, Pi.sub_apply, Dfinsupp.coe_zero, Pi.zero_apply,
+  tsub_eq_zero_iff_le] at sub1
+  by_contra h
+  rw [not_or, not_exists, ←ne_eq] at h
+  simp only [not_and, not_lt] at h
+  rw [←iff_false_intro h.left, FunLike.ext_iff]
+  intro x
+  apply Nat.strong_rec_on x
+  intro
+  rw [le_antisymm_iff, imp_and]
+  apply And.intro
+  intro 
+  apply sub1
+  apply h.right
 
-lemma tool2 (a b : Π₀ x : ℕ, ℕ) (sub2 : b-a=0) : ¬(a=b ∨ (∃ i, (∀ (j : ℕ), Nat.lt j i → a j = b j) ∧ a i < b i)):=by
-  sorry
+lemma tool2 (a b : Π₀ x : ℕ, ℕ) (sub1 : ¬a-b=0)(sub2 : b-a=0) : ¬(a=b ∨ (∃ i, (∀ (j : ℕ), Nat.lt j i → a j = b j) ∧ a i < b i)):=by
+  rw [FunLike.ext_iff, not_forall] at sub1
+  simp only [ge_iff_le, Dfinsupp.coe_tsub, Pi.sub_apply, Dfinsupp.coe_zero, Pi.zero_apply, tsub_eq_zero_iff_le,
+  not_le] at sub1
+  rw [FunLike.ext_iff] at sub2
+  simp only [ge_iff_le, Dfinsupp.coe_tsub, Pi.sub_apply, Dfinsupp.coe_zero, Pi.zero_apply,
+  tsub_eq_zero_iff_le] at sub2
+  rw [not_or]
+  apply And.intro
+  rw [←ne_eq, FunLike.ne_iff]
+  simp only [ne_iff_lt_or_gt]
+  rw [exists_or]
+  apply Or.intro_right
+  apply sub1
+  rw [not_exists]
+  intro
+  rw [not_and]
+  apply imp_intro
+  rw [not_lt]
+  apply sub2
 
-lemma NonzeroNonemptysupport (t : (Π₀ x : ℕ, ℕ))(nonzero : ¬t = 0) : Finset.Nonempty t.support:= by
+lemma NonzeroDfinsuppNonemptysupport (t : (Π₀ x : σ, ℕ))(nonzero : ¬t = 0) : Finset.Nonempty t.support:= by
   by_contra h
   rw [Finset.not_nonempty_iff_eq_empty, Dfinsupp.support_eq_empty] at h
-  rw [<-not_iff_false_intro h]
+  rw [←not_iff_false_intro h]
   exact nonzero
 
 lemma tool3 (a b : Π₀ x : ℕ, ℕ) (sub1 : ¬a-b=0)(sub2 : ¬b-a=0)
-(sub3 : List.map (b-a) (List.range ((Finset.max' (b-a).support (NonzeroNonemptysupport (b-a) sub2))+1)) >
-List.map (a-b) (List.range ((Finset.max' (a-b).support (NonzeroNonemptysupport (a-b) sub1))+1)))
+(sub3 : List.map (b-a) (List.range ((Finset.max' (b-a).support (NonzeroDfinsuppNonemptysupport (b-a) sub2))+1)) >
+List.map (a-b) (List.range ((Finset.max' (a-b).support (NonzeroDfinsuppNonemptysupport (a-b) sub1))+1)))
  : a=b ∨ (∃ i, (∀ (j : ℕ), Nat.lt j i → a j = b j) ∧ a i < b i):=by
   sorry
 
 lemma tool4 (a b : Π₀ x : ℕ, ℕ) (sub1 : ¬a-b=0)(sub2 : ¬b-a=0)
-(sub3 : ¬(List.map (b-a) (List.range ((Finset.max' (b-a).support (NonzeroNonemptysupport (b-a) sub2))+1)) >
-List.map (a-b) (List.range ((Finset.max' (a-b).support (NonzeroNonemptysupport (a-b) sub1))+1))))
+(sub3 : ¬(List.map (b-a) (List.range ((Finset.max' (b-a).support (NonzeroDfinsuppNonemptysupport (b-a) sub2))+1)) >
+List.map (a-b) (List.range ((Finset.max' (a-b).support (NonzeroDfinsuppNonemptysupport (a-b) sub1))+1))))
  : ¬(a=b ∨ (∃ i, (∀ (j : ℕ), Nat.lt j i → a j = b j) ∧ a i < b i)):=by
   sorry
 
 instance lex'.decidable (a b : Π₀ x : ℕ, ℕ) : Decidable (a=b ∨ (∃ i, (∀ (j : ℕ), Nat.lt j i → a j = b j) ∧ a i < b i)):=
   if sub1 : a-b=0 then isTrue (tool1 a b sub1) else
-    if sub2 : b-a=0 then isFalse (tool2 a b sub2) else
-      if sub3 : List.map (b-a) (List.range ((Finset.max' (b-a).support (NonzeroNonemptysupport (b-a) sub2))+1)) >
-      List.map (a-b) (List.range ((Finset.max' (a-b).support (NonzeroNonemptysupport (a-b) sub1))+1)) then 
-      isTrue (tool3 a b sub1 sub2 sub3) else isFalse (tool4 a b sub1 sub2 sub3)
+    if sub2 : b-a=0 then isFalse (tool2 a b sub1 sub2) else
+      if lt : List.map (b-a) (List.range ((Finset.max' (b-a).support (NonzeroDfinsuppNonemptysupport (b-a) sub2))+1)) >
+      List.map (a-b) (List.range ((Finset.max' (a-b).support (NonzeroDfinsuppNonemptysupport (a-b) sub1))+1)) then 
+      isTrue (tool3 a b sub1 sub2 lt) else isFalse (tool4 a b sub1 sub2 lt)
 
 instance lex'.DecidableRel : DecidableRel (lex' Nat.lt (· < ·)):= lex'.decidable
 
@@ -298,7 +330,7 @@ instance lex'.Trans : IsTrans (Π₀ x : ℕ, ℕ) (lex' Nat.lt ( · < · )) whe
     rw [first]
     exact h2
     by_cases second : b=c
-    rw [<-second]
+    rw [←second]
     exact h1
     rw [lex', or_iff_right] at h1
     rw [lex', or_iff_right] at h2
@@ -373,8 +405,8 @@ instance lex'.Antisymm : IsAntisymm (Π₀ x : ℕ, ℕ) (lex' Nat.lt (· < ·))
     exact h002
     rw [←not_iff_false_intro h22.right, not_lt]
     apply Eq.le ht
-    rw [<-ne_eq] at first
-    rw [<-ne_eq]
+    rw [←ne_eq] at first
+    rw [←ne_eq]
     apply Ne.symm
     exact first
     exact first
@@ -388,14 +420,14 @@ instance lex'.Total : IsTotal (Π₀ x : ℕ, ℕ) (lex' Nat.lt (· < ·)) where
     apply Or.intro_left
     exact h
     rw [eq_comm]
-    rw [<-or_or_distrib_left]
+    rw [←or_or_distrib_left]
     apply Or.intro_right
     rw [FunLike.ext_iff, not_forall] at h
     by_contra h02
-    rw [not_or, not_exists, not_exists, <-forall_and] at h02
-    simp only [not_and, eq_comm, <-imp_and, not_lt, <-le_antisymm_iff,
+    rw [not_or, not_exists, not_exists, ←forall_and] at h02
+    simp only [not_and, eq_comm, ←imp_and, not_lt, ←le_antisymm_iff,
     Nat.lt_eq] at h02
-    rw [<-not_iff_false_intro h, not_exists_not]
+    rw [←not_iff_false_intro h, not_exists_not]
     simp at h02
     intro n
     apply Nat.strong_rec_on n h02
@@ -476,7 +508,7 @@ def SPolynomial (r : (Π₀ x : σ, ℕ) → (Π₀ x : σ, ℕ) → Prop)
 
 section Visibility
 
-def Term (var : List ℕ) : (Π₀ (x : ℕ), ℕ) := 
+def Term (var : List ℕ) : Π₀ x : ℕ, ℕ := 
   { toFun := fun x : ℕ ↦ List.getD var x 0,
       support' := Trunc.mk {
         val := Multiset.range (List.length var)
@@ -491,20 +523,39 @@ def Term (var : List ℕ) : (Π₀ (x : ℕ), ℕ) :=
           rw [Multiset.mem_range]
           exact h
           }
-      : Π₀ (x : ℕ), ℕ }
+      : Π₀ x : ℕ, ℕ }
 
 def Monomial' (coeff : ℚ) (var : List ℕ) : DMvPolynomial ℕ ℚ:= 
   Monomial (Term var) coeff
 
-def Viewer (t : (Π₀ x : ℕ, ℕ)) : List ℕ := 
-  if h : (t=0) then [] 
-  else List.map t (List.range ((Finset.max' t.support (NonzeroNonemptysupport t h))+1))
+def Term.toList (t : (Π₀ x : ℕ, ℕ)) : List ℕ := 
+  if h : t=0 then [] 
+  else List.map t (List.range ((Finset.max' t.support (NonzeroDfinsuppNonemptysupport t h))+1))
 
-def polynomialviewer (p : DMvPolynomial ℕ ℚ) : List String := 
-  List.map (fun (i : List ℕ) ↦ 
+def Pol.toList (p : DMvPolynomial ℕ ℚ) : List (Π₀ x : ℕ, ℕ):=
+  p.support.sort (lex' Nat.lt (· < ·))
+
+def eval (p : DMvPolynomial ℕ ℚ) (vals : List ℚ) : DMvPolynomial ℕ ℚ:=
+  let rec evalterm : (Π₀ x : ℕ, ℕ) → Nat → Π₀ x : ℕ, ℕ
+    | a, 0   => a
+    | a, i+1 => evalterm (a.update i 0) i
+  let rec evalcoeff : ℚ → (Π₀ x : ℕ, ℕ) → Nat → ℚ
+    | c, _, 0   => c
+    | c, term, i+1 => (evalcoeff c term i) * (vals[i]! ^ term.toFun i)
+  let rec main : Nat → DMvPolynomial ℕ ℚ
+    | 0   => 0
+    | i+1 => (main i) + (Monomial (evalterm (Pol.toList p)[i]! vals.length) 
+    (evalcoeff (p.toFun (Pol.toList p)[i]!) (Pol.toList p)[i]! vals.length))
+  main p.support.card
+
+def PolynomialViewer (p : DMvPolynomial ℕ ℚ) : List String := 
+  List.map (fun i : List ℕ ↦ 
   ite (Term i ∈ p.support) (toString (p.toFun (Term i)) ++ " " ++ List.toString i) "") 
-  (List.map Viewer (p.support.sort (lex' Nat.lt (· < ·))))
-
-#eval Viewer (Term [1,0,3]) 
-#eval List.toString (Viewer (Term [1,0,3]))
-#eval polynomialviewer (Monomial' (-2.5) ([1,0,3,1]) + Monomial' (2.5) ([1,3,3,1]) + Monomial' (2.5) ([]))
+  (List.map Term.toList (p.support.sort (lex' Nat.lt (· < ·))))
+#eval List.map Term.toList (Pol.toList 1)
+#check Pol.toList 0
+#eval Term.toList (Term [1,0,3]) 
+#eval List.toString (Term.toList (Term [1,0,3]))
+#eval PolynomialViewer (Monomial' (-2.5) ([1,0,3,1]) + Monomial' (2.5) ([1,3,3,1]) + Monomial' (2.5) ([]))
+#eval PolynomialViewer (eval (Monomial' (-2.5) ([1,0,3,1]) + Monomial' (3.5) ([1,3,3,1]) + Monomial' (2.5) ([])) ([4]))
+#eval PolynomialViewer (eval (Monomial' (-2.5) ([1,0,3,1]) + Monomial' (3.5) ([1,3,3,1]) + Monomial' (2.5) ([])) ([4,2]))
