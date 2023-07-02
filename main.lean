@@ -564,4 +564,53 @@ def PolynomialViewer (p : DMvPolynomial ℕ ℚ) : List String :=
   ite (Term i ∈ p.support) (toString (p.toFun (Term i)) ++ " " ++ List.toString i) "") 
   (List.map Term.toList (p.support.sort (lex' Nat.lt (· < ·))))
 
-#eval PolynomialViewer (eval (Monomial' (-2.5) ([1,0,3,1]) + Monomial' (3.5) ([1,3,3,1]) + Monomial' (2.5) ([])) ([4,2]))
+def div (dividend : DMvPolynomial σ R)(divisors :List (DMvPolynomial σ R))
+(r : (Π₀ x : σ, ℕ) → (Π₀ x : σ, ℕ) → Prop){s : R → R → Prop}
+[DecidableRel r] [IsTrans (Π₀ x : σ, ℕ) r] [IsAntisymm (Π₀ x : σ, ℕ) r]
+[IsTotal (Π₀ x : σ, ℕ) r]: DMvPolynomial σ R:=
+  let singlediv (divisor dividend : DMvPolynomial σ R): 
+  DMvPolynomial σ R × Bool :=
+    if h : (LeadingTerm r dividend) - (LeadingTerm r divisor) + (LeadingTerm r divisor)= (LeadingTerm r dividend)
+    then
+      ((dividend-(Monomial (TermDiv (LeadingTerm r dividend) (LeadingTerm r divisor) h)
+      ((LeadingCoeff r dividend)/(LeadingCoeff r divisor)))*divisor), true)
+    else (dividend, false)
+  let rec main : ℕ → Bool → Bool → DMvPolynomial σ R → DMvPolynomial σ R →
+  (DMvPolynomial σ R) × (DMvPolynomial σ R)
+    | 0,   false, false,  r', p' => main divisors.length false (p'=0) 
+      (r'+Monomial (LeadingTerm r p') (LeadingCoeff r p'))
+      (p'-Monomial (LeadingTerm r p') (LeadingCoeff r p'))
+    | n+1, false, false,  r', p' => main n (singlediv divisors[n]! p').2 (p'=0) r' 
+      (singlediv divisors[n]! p').1
+    | n,    true, false,  r', p' => main divisors.length false (p'=0) r' p'
+    | _,   _,     true,   r', p' => (r', p')
+  (main divisors.length false false 0 dividend).1
+    
+def div' (dividend : DMvPolynomial ℕ ℚ)(divisors :List (DMvPolynomial ℕ ℚ))
+: DMvPolynomial ℕ ℚ:=
+  let singlediv (divisor dividend : DMvPolynomial ℕ ℚ): 
+  DMvPolynomial ℕ ℚ × Bool :=
+    if h : (LeadingTerm (lex' Nat.lt (· < ·))  dividend) - 
+      (LeadingTerm (lex' Nat.lt (· < ·))  divisor) + 
+      (LeadingTerm (lex' Nat.lt (· < ·))  divisor)
+      = (LeadingTerm (lex' Nat.lt (· < ·))  dividend)
+    then
+      ((dividend-(Monomial (TermDiv (LeadingTerm (lex' Nat.lt (· < ·)) dividend) 
+      (LeadingTerm (lex' Nat.lt (· < ·)) divisor) h)
+      ((LeadingCoeff (lex' Nat.lt (· < ·)) dividend)/
+      (LeadingCoeff (lex' Nat.lt (· < ·)) divisor)))*divisor), true)
+    else (dividend, false)
+  let rec main : ℕ → Bool → Bool → (DMvPolynomial ℕ ℚ) → (DMvPolynomial ℕ ℚ) →
+  (DMvPolynomial ℕ ℚ) × (DMvPolynomial ℕ ℚ)
+    | 0,   false, false,  r', p' => 
+      main divisors.length false (p'=0) 
+      (r'+Monomial (LeadingTerm (lex' Nat.lt (· < ·)) p') (LeadingCoeff (lex' Nat.lt (· < ·)) p'))
+      (p'-Monomial (LeadingTerm (lex' Nat.lt (· < ·)) p') (LeadingCoeff (lex' Nat.lt (· < ·)) p'))
+    | n+1, false, false,  r', p' => 
+      main n (singlediv divisors[n]! p').2 (p'=0) r' 
+      (singlediv divisors[n]! p').1
+    | n,   true,  false,  r', p' => 
+      main divisors.length false (p'=0) r' p'
+    | _,   _,     true,   r', p' => 
+      (r', p')
+  (main divisors.length false false 0 dividend).1
