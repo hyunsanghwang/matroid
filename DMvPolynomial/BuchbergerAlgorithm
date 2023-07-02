@@ -1,0 +1,174 @@
+import DMvPolynomial.basics
+import DMvPolynomial.CommDMvPolynomial
+import DMvPolynomial.order
+import DMvPolynomial.viewer
+
+
+section Grobner_Basis
+
+open DMvPolynomial CommDMvpolynomial order List
+
+variable {σ : Type}{R : Type}[DecidableEq σ][DecidableEq R][Field R]
+
+
+lemma nonzero_polynomial_support_nonempty
+ (r : (Π₀ x : σ, ℕ) → (Π₀ x : σ, ℕ) → Prop) 
+(p: DMvPolynomial σ R)[inst : DecidableRel r]
+[inst : IsTrans (Π₀ x : σ, ℕ) r] [inst : IsAntisymm (Π₀ x : σ, ℕ) r] 
+[inst : IsTotal (Π₀ x : σ, ℕ) r](h : ¬p=0)
+: Finset.sort r p.support ≠ []:= by
+  rw [ne_eq, ←List.toFinset_eq_empty_iff, Finset.sort_toFinset,
+  Dfinsupp.support_eq_empty]
+  exact h
+
+def LeadingTerm (r : (Π₀ x : σ, ℕ) → (Π₀ x : σ, ℕ) → Prop) [DecidableRel r] 
+[IsTrans (Π₀ x : σ, ℕ) r] [IsAntisymm (Π₀ x : σ, ℕ) r] 
+[IsTotal (Π₀ x : σ, ℕ) r](p : DMvPolynomial σ R) : Π₀ x : σ, ℕ:=
+  if h : p=0 then 0 else
+  List.getLast (Finset.sort r p.support) 
+  (nonzero_polynomial_support_nonempty r p h)
+
+def LeadingCoeff (r : (Π₀ x : σ, ℕ) → (Π₀ x : σ, ℕ) → Prop) [DecidableRel r] 
+[IsTrans (Π₀ x : σ, ℕ) r] [IsAntisymm (Π₀ x : σ, ℕ) r] 
+[IsTotal (Π₀ x : σ, ℕ) r](p : DMvPolynomial σ R): R:=
+  if p=0 then 1 else
+  p.toFun (LeadingTerm r p)
+
+
+def LeadingMon (r : (Π₀ x : σ, ℕ) → (Π₀ x : σ, ℕ) → Prop) [DecidableRel r] 
+[IsTrans (Π₀ x : σ, ℕ) r] [IsAntisymm (Π₀ x : σ, ℕ) r] 
+[IsTotal (Π₀ x : σ, ℕ) r](p : DMvPolynomial σ R)[NeZero p] : DMvPolynomial σ R:=
+  Monomial (LeadingTerm r p) (LeadingCoeff r p)
+
+def TermDivPolyVersion (t : Π₀ x : σ, ℕ)(p1 : DMvPolynomial σ R){le : (x : σ)→  
+(t1 : p1.support)→  t x ≤ ((t1 : p1.support) : Π₀ x : σ, ℕ) x} : 
+DMvPolynomial σ R :=
+  (Dfinsupp.sum p1 (fun (t1 : Π₀ x : σ, ℕ)(r1 : R) ↦
+  Monomial (t1-t) (r1)))
+
+def TermDiv (t1 t : Π₀ x : σ, ℕ)(h : t1-t+t=t1) : Π₀ x : σ, ℕ :=
+  t1-t
+
+
+def Lcm (t1 t2 : Π₀ x : σ, ℕ) :  Π₀ x : σ, ℕ:=
+  { toFun := fun (i : σ) ↦ max (t1.toFun i) (t2.toFun i),
+    support' := Trunc.mk {
+      val := (t1.support ∪ t2.support).val
+      property := by
+        intro x
+        by_cases h : (x ∈ t1.support) ∨ (x ∈ t2.support)
+        apply Or.intro_left
+        rw [Finset.union_val, Multiset.mem_union, Finset.mem_val, 
+        Finset.mem_val]
+        exact h
+        apply Or.intro_right
+        rw [Dfinsupp.toFun_eq_coe, Dfinsupp.toFun_eq_coe]
+        simp only [ge_iff_le]
+        rw [Nat.max_eq_zero_iff, ←Dfinsupp.not_mem_support_iff, 
+        ←Dfinsupp.not_mem_support_iff, ←not_or]
+        exact h
+    }
+    : Π₀ x : σ, ℕ }
+
+lemma divtool (t1 t2 : Π₀ x : σ, ℕ) (p : t2.support.card=(t2-t1).support.card):
+((x : σ) → t1 x ≤ t2 x):= sorry
+
+lemma divtool2 (t1 t2 : Π₀ x : σ, ℕ) (p : ¬t2.support.card=(t2-t1).support.card):
+¬((x : σ) → t1 x ≤ t2 x):= sorry
+
+
+instance dividesDecidable (t1 t2 : Π₀ x : σ, ℕ) : 
+Decidable ((x : σ) → t1 x ≤ t2 x):=
+  if p : t2.support.card=(t2-t1).support.card then isTrue (divtool t1 t2 p) 
+  else isFalse (divtool2 t1 t2 p)
+  
+
+instance LcmDivisibleLeft (t1 t2 : Π₀ x : σ, ℕ) : Lcm t1 t2 -t1+t1=Lcm t1 t2 := by
+  sorry
+
+instance LcmDivisibleRight (t1 t2 : Π₀ x : σ, ℕ) : Lcm t1 t2 -t2+t2=Lcm t1 t2 := by
+  sorry
+
+def SPolynomial (r : (Π₀ x : σ, ℕ) → (Π₀ x : σ, ℕ) → Prop)
+[DecidableRel r] [IsTrans (Π₀ x : σ, ℕ) r] [IsAntisymm (Π₀ x : σ, ℕ) r]
+[IsTotal (Π₀ x : σ, ℕ) r](f g: DMvPolynomial σ R) 
+: DMvPolynomial σ R :=
+  Monomial (TermDiv (Lcm (LeadingTerm r f) (LeadingTerm r g))
+  (LeadingTerm r f) (LcmDivisibleLeft (LeadingTerm r f) (LeadingTerm r g))) (LeadingCoeff r g) * f
+  - Monomial (TermDiv (Lcm (LeadingTerm r f) (LeadingTerm r g))
+  (LeadingTerm r g) (LcmDivisibleRight (LeadingTerm r f) (LeadingTerm r g))) (LeadingCoeff r f) * g
+
+def singlediv (r : (Π₀ x : σ, ℕ) → (Π₀ x : σ, ℕ) → Prop)
+[DecidableRel r] [IsTrans (Π₀ x : σ, ℕ) r] [IsAntisymm (Π₀ x : σ, ℕ) r]
+[IsTotal (Π₀ x : σ, ℕ) r](f p q: DMvPolynomial σ R)
+[NeZero p](divisionoccured : Bool): 
+DMvPolynomial σ R × DMvPolynomial σ R × Bool:= 
+  if h : (LeadingTerm r p) - (LeadingTerm r f) + (LeadingTerm r f)= (LeadingTerm r p) then
+  (q+(Monomial (TermDiv (LeadingTerm r p) (LeadingTerm r f) h)
+  ((LeadingCoeff r p)/(LeadingCoeff r f))),
+  (p-(Monomial (TermDiv (LeadingTerm r p) (LeadingTerm r f) h)
+  ((LeadingCoeff r p)/(LeadingCoeff r f)))*f), true)
+  else (p, q, divisionoccured)
+
+def singlediv' (r : (Π₀ x : σ, ℕ) → (Π₀ x : σ, ℕ) → Prop)
+[DecidableRel r] [IsTrans (Π₀ x : σ, ℕ) r] [IsAntisymm (Π₀ x : σ, ℕ) r]
+[IsTotal (Π₀ x : σ, ℕ) r](f dividend q: DMvPolynomial σ R): 
+  DMvPolynomial σ R × DMvPolynomial σ R × Bool :=
+    if h : (LeadingTerm r dividend) - (LeadingTerm r f) + (LeadingTerm r f)= (LeadingTerm r dividend)
+    then
+      (q+(Monomial (TermDiv (LeadingTerm r dividend) (LeadingTerm r f) h)
+      ((LeadingCoeff r dividend)/(LeadingCoeff r f))),
+      (dividend-(Monomial (TermDiv (LeadingTerm r dividend) (LeadingTerm r f) h)
+      ((LeadingCoeff r dividend)/(LeadingCoeff r f)))*f), true)
+    else (q, dividend, false)
+
+def div (dividend : DMvPolynomial σ R)(divisors :List (DMvPolynomial σ R))
+(r : (Π₀ x : σ, ℕ) → (Π₀ x : σ, ℕ) → Prop){s : R → R → Prop}
+[DecidableRel r] [IsTrans (Π₀ x : σ, ℕ) r] [IsAntisymm (Π₀ x : σ, ℕ) r]
+[IsTotal (Π₀ x : σ, ℕ) r]: DMvPolynomial σ R:=
+  let singlediv (divisor dividend : DMvPolynomial σ R): 
+  DMvPolynomial σ R × Bool :=
+    if h : (LeadingTerm r dividend) - (LeadingTerm r divisor) + (LeadingTerm r divisor)= (LeadingTerm r dividend)
+    then
+      ((dividend-(Monomial (TermDiv (LeadingTerm r dividend) (LeadingTerm r divisor) h)
+      ((LeadingCoeff r dividend)/(LeadingCoeff r divisor)))*divisor), true)
+    else (dividend, false)
+  let rec main : ℕ → Bool → Bool → DMvPolynomial σ R → DMvPolynomial σ R →
+  (DMvPolynomial σ R) × (DMvPolynomial σ R)
+    | 0,   false, false,  r', p' => main divisors.length false (p'=0) 
+      (r'+Monomial (LeadingTerm r p') (LeadingCoeff r p'))
+      (p'-Monomial (LeadingTerm r p') (LeadingCoeff r p'))
+    | n+1, false, false,  r', p' => main n (singlediv divisors[n]! p').2 (p'=0) r' 
+      (singlediv divisors[n]! p').1
+    | n,    true, false,  r', p' => main divisors.length false (p'=0) r' p'
+    | _,   _,     true,   r', p' => (r', p')
+  (main divisors.length false false 0 dividend).1
+    
+def div' (dividend : DMvPolynomial ℕ ℚ)(divisors :List (DMvPolynomial ℕ ℚ))
+: DMvPolynomial ℕ ℚ:=
+  let singlediv (divisor dividend : DMvPolynomial ℕ ℚ): 
+  DMvPolynomial ℕ ℚ × Bool :=
+    if h : (LeadingTerm (lex' Nat.lt (· < ·))  dividend) - 
+      (LeadingTerm (lex' Nat.lt (· < ·))  divisor) + 
+      (LeadingTerm (lex' Nat.lt (· < ·))  divisor)
+      = (LeadingTerm (lex' Nat.lt (· < ·))  dividend)
+    then
+      ((dividend-(Monomial (TermDiv (LeadingTerm (lex' Nat.lt (· < ·)) dividend) 
+      (LeadingTerm (lex' Nat.lt (· < ·)) divisor) h)
+      ((LeadingCoeff (lex' Nat.lt (· < ·)) dividend)/
+      (LeadingCoeff (lex' Nat.lt (· < ·)) divisor)))*divisor), true)
+    else (dividend, false)
+  let rec main : ℕ → Bool → Bool → (DMvPolynomial ℕ ℚ) → (DMvPolynomial ℕ ℚ) →
+  (DMvPolynomial ℕ ℚ) × (DMvPolynomial ℕ ℚ)
+    | 0,   false, false,  r', p' => 
+      main divisors.length false (p'=0) 
+      (r'+Monomial (LeadingTerm (lex' Nat.lt (· < ·)) p') (LeadingCoeff (lex' Nat.lt (· < ·)) p'))
+      (p'-Monomial (LeadingTerm (lex' Nat.lt (· < ·)) p') (LeadingCoeff (lex' Nat.lt (· < ·)) p'))
+    | n+1, false, false,  r', p' => 
+      main n (singlediv divisors[n]! p').2 (p'=0) r' 
+      (singlediv divisors[n]! p').1
+    | n,   true,  false,  r', p' => 
+      main divisors.length false (p'=0) r' p'
+    | _,   _,     true,   r', p' => 
+      (r', p')
+  (main divisors.length false false 0 dividend).1
