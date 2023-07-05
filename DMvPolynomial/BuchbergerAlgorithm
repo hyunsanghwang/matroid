@@ -172,3 +172,17 @@ def div' (dividend : DMvPolynomial ℕ ℚ)(divisors :List (DMvPolynomial ℕ �
     | _,   _,     true,   r', p' => 
       (r', p')
   (main divisors.length false false 0 dividend).1
+
+def BuchbergerAlgorithm (generators : List (DMvPolynomial ℕ ℚ)): List (DMvPolynomial ℕ ℚ):=
+  let repeater (a : List (DMvPolynomial ℕ ℚ)) (p q  : ℕ) (c : Bool):
+  List (DMvPolynomial ℕ ℚ) × Bool:=
+    if (div' (SPolynomial (lex' Nat.lt (· < ·)) a[p]! a[q]!) a  ≠ 0) 
+    ∧ (a.elem (div' (SPolynomial (lex' Nat.lt (· < ·)) a[p]! a[q]!) a) = false)
+    then ([SPolynomial (lex' Nat.lt (· < ·)) a[p]! a[q]!].append a, true)
+    else (a, c)
+  let rec main : List (DMvPolynomial ℕ ℚ) → ℕ → ℕ → Bool → List (DMvPolynomial ℕ ℚ)
+    | a, p, q+1, c => main (repeater a p q c).1 p q (repeater a p q c).2
+    | a, p+1, 0, c => main a p a.length c
+    | a, 0,  0,  true => main a (a.length-1) a.length false
+    | a, 0, 0, false => a
+  main generators (generators.length-1) generators.length false
